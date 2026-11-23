@@ -56,14 +56,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Row(
                       children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(10),
+                        ClipOval(
+                          child: Image.asset(
+                            'assets/chmsu-logo.png',
+                            width: 44,
+                            height: 44,
+                            fit: BoxFit.cover,
                           ),
-                          child: const Icon(Icons.menu_book_rounded, color: Colors.white, size: 22),
                         ),
                         const SizedBox(width: 12),
                         const Column(

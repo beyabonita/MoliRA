@@ -12,14 +12,13 @@ class ChmsuTopHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Row(
         children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: AppColors.softGreenBg,
-              borderRadius: BorderRadius.circular(10),
+          ClipOval(
+            child: Image.asset(
+              'assets/chmsu-logo.png',
+              width: 38,
+              height: 38,
+              fit: BoxFit.cover,
             ),
-            child: const Icon(Icons.menu_book_rounded, color: AppColors.primaryGreen, size: 20),
           ),
           const SizedBox(width: 10),
           const Column(

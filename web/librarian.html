@@ -4,55 +4,242 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CHMSU Library · Librarian Portal Sign In</title>
+  <link rel="icon" type="image/png" href="assets/chmsu-logo.png" />
   <link rel="stylesheet" href="css/librarian.css" />
+  <style>
+    body.chmsu-login-bg {
+      min-height: 100vh;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.58), rgba(244, 247, 245, 0.66)),
+        url('assets/chmsu-campus-bg.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .chmsu-brand-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .chmsu-seal {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      background: #FFFFFF;
+    }
+
+    .chmsu-brand-text .univ {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: #111827;
+      line-height: 1.05;
+    }
+
+    .chmsu-brand-text .sub {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #1F2937;
+    }
+
+    .chmsu-login-card {
+      width: 100%;
+      max-width: 400px;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(8px);
+      border: 1px solid #E5E7EB;
+      border-radius: 14px;
+      padding: 32px 28px;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+    }
+
+    .chmsu-login-card h1 {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 4px;
+    }
+
+    .chmsu-login-card .subtitle {
+      text-align: center;
+      font-size: 13px;
+      color: #6B7280;
+      margin-bottom: 18px;
+    }
+
+    .campus-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #6B7280;
+      font-size: 12px;
+      margin-bottom: 18px;
+    }
+
+    .campus-divider::before,
+    .campus-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #E5E7EB;
+    }
+
+    .sis-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .sis-input {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid #D1D5DB;
+      background: #EAF0FA;
+      font-size: 14px;
+      color: #111827;
+      outline: none;
+    }
+
+    .sis-input:focus {
+      border-color: #0B6B40;
+      box-shadow: 0 0 0 3px rgba(11, 107, 64, 0.12);
+    }
+
+    .eye-btn {
+      position: absolute;
+      right: 10px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #6B7280;
+      font-size: 15px;
+      padding: 4px;
+    }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .forgot-link {
+      font-size: 12px;
+      font-weight: 600;
+      color: #111827;
+      text-decoration: none;
+    }
+
+    .forgot-link:hover {
+      text-decoration: underline;
+    }
+
+    .btn-sis-login {
+      width: 100%;
+      padding: 11px 16px;
+      border-radius: 8px;
+      border: none;
+      background: #0B6B40;
+      color: #FFFFFF;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .btn-sis-login:hover {
+      background: #085432;
+    }
+
+    .access-row {
+      text-align: center;
+      font-size: 12px;
+      color: #6B7280;
+      margin-top: 18px;
+    }
+
+    .access-row button {
+      background: none;
+      border: none;
+      color: #374151;
+      text-decoration: underline;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .login-footer {
+      margin-top: 22px;
+      font-size: 11px;
+      color: #374151;
+      text-align: center;
+      font-weight: 500;
+    }
+  </style>
 </head>
-<body>
-  <div class="login-wrapper">
-    <div class="login-card">
-      <div class="login-hero">
-        <div class="brand" style="padding: 0 0 18px; border-bottom-color: rgba(255,255,255,0.14);">
-          <div class="brand-icon">📖</div>
-          <div>
-            <div class="brand-name">CHMSU Library</div>
-            <div class="brand-tagline">LEARN. DISCOVER. GROW.</div>
-          </div>
-        </div>
-        <h1 class="serif-title" style="font-size: 26px; margin-top: 18px;">Librarian Workspace</h1>
-        <p style="font-size: 13px; color: rgba(255,255,255,0.8); margin-top: 6px;">
-          Carlos Hilado Memorial State University · Talisay campus library
-        </p>
-      </div>
-      <div class="login-body">
-        <h2 style="font-size: 18px; margin-bottom: 4px;">Sign in to continue</h2>
-        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 18px;">
-          Manage reservations, monitor circulation analytics, and generate reports.
-        </p>
-
-        <form id="librarian-login-form">
-          <div class="form-group">
-            <label class="form-label" for="email">Librarian email</label>
-            <input class="form-control" id="email" type="email" value="ana.delacruz@chmsu.edu.ph" required />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="password">Password</label>
-            <input class="form-control" id="password" type="password" value="••••••••••" required />
-          </div>
-          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 11px;">
-            Sign in to Librarian Portal →
-          </button>
-        </form>
-
-        <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-subtle); text-align: center;">
-          <button id="demo-btn" type="button" class="btn btn-outline" style="width: 100%;">
-            Preview with Sample Talisay Data
-          </button>
-          <p style="font-size: 11px; color: var(--text-muted); margin-top: 10px;">
-            Connected to Supabase when configured in <code>js/supabase-client.js</code>.
-          </p>
-        </div>
-      </div>
+<body class="chmsu-login-bg">
+  <div class="chmsu-brand-header">
+    <img src="assets/chmsu-logo.png" alt="CHMSU Logo" class="chmsu-seal" />
+    <div class="chmsu-brand-text">
+      <div class="univ">CARLOS HILADO</div>
+      <div class="sub">MEMORIAL STATE UNIVERSITY</div>
     </div>
   </div>
+
+  <div class="chmsu-login-card">
+    <h1>Welcome back</h1>
+    <p class="subtitle">CHMSU Library - Librarian Portal</p>
+
+    <div class="campus-divider">Talisay Campus</div>
+
+    <form id="librarian-login-form">
+      <div class="form-group">
+        <label class="form-label" for="email" style="color:#111827;">Librarian ID or Email</label>
+        <input class="sis-input" id="email" type="text" value="ana.delacruz@chmsu.edu.ph" required />
+      </div>
+
+      <div class="form-group">
+        <div class="label-row">
+          <label class="form-label" for="password" style="margin-bottom:0;color:#111827;">Password</label>
+          <a href="#" class="forgot-link" id="forgot-link">Forgot Password?</a>
+        </div>
+        <div class="sis-input-wrap">
+          <input class="sis-input" id="password" type="password" value="••••••••" style="padding-right: 38px;" required />
+          <button type="button" class="eye-btn" id="toggle-pw" title="Show/hide password">👁</button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-sis-login">
+        <span>↪</span> Login
+      </button>
+    </form>
+
+    <div class="access-row">
+      Want to explore first? <button type="button" id="demo-btn">Preview with Sample Data</button>
+    </div>
+  </div>
+
+  <div class="login-footer">© 2026 CHMSU Library Management System</div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/supabase-client.js"></script>
@@ -61,6 +248,16 @@
       localStorage.setItem('chmsu_librarian_session', JSON.stringify(user));
       window.location.href = 'analytics.html';
     }
+
+    document.getElementById('toggle-pw').addEventListener('click', () => {
+      const pw = document.getElementById('password');
+      pw.type = pw.type === 'password' ? 'text' : 'password';
+    });
+
+    document.getElementById('forgot-link').addEventListener('click', (e) => {
+      e.preventDefault();
+      window.ChmsuApi.showToast('Contact the CHMSU Talisay Library IT administrator to reset your password.');
+    });
 
     document.getElementById('demo-btn').addEventListener('click', () => {
       const state = window.ChmsuApi.getDemoState();

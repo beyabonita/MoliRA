@@ -1,4 +1,11 @@
 {
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/librarian.html",
+      "permanent": false
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
