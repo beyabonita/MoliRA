@@ -32,12 +32,13 @@
           .order('due_at', { ascending: true }),
         client
           .from('profiles')
-          .select('id', { count: 'exact', head: true })
+          .select('id')
           .eq('role', 'student'),
       ]);
       if (rsvQ.error) throw rsvQ.error;
       if (borQ.error) throw borQ.error;
-      studentCount = stuQ.count || 0;
+      if (stuQ.error) throw stuQ.error;
+      studentCount = (stuQ.data || []).length;
 
       reservations = (rsvQ.data || []).map(r => ({
         id: r.id,

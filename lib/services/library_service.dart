@@ -8,10 +8,10 @@ class LibraryService extends ChangeNotifier {
   LibraryService._();
 
   StudentProfile? currentUser;
-  List<LibraryResource> resources = _seedResources();
-  List<ReservationItem> reservations = _seedReservations();
-  List<BorrowingRecord> borrowings = _seedBorrowings();
-  List<AppNotificationItem> notifications = _seedNotifications();
+  List<LibraryResource> resources = SupabaseConfig.isConfigured ? [] : _seedResources();
+  List<ReservationItem> reservations = SupabaseConfig.isConfigured ? [] : _seedReservations();
+  List<BorrowingRecord> borrowings = SupabaseConfig.isConfigured ? [] : _seedBorrowings();
+  List<AppNotificationItem> notifications = SupabaseConfig.isConfigured ? [] : _seedNotifications();
 
   int get unreadNotificationCount => notifications.where((n) => !n.isRead).length;
   int get activeLoanCount => borrowings.where((b) => b.isActive).length;
@@ -85,6 +85,7 @@ class LibraryService extends ChangeNotifier {
           email: email,
           campus: 'Talisay',
         );
+        await refreshFromSupabase();
         notifyListeners();
         return true;
       }
