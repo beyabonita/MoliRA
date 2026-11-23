@@ -18,8 +18,12 @@ class HomeScreen extends StatelessWidget {
     final overdueLoans = svc.overdueLoanCount;
     final featured = svc.resources.take(2).toList();
 
-    return SingleChildScrollView(
-      child: Column(
+    return RefreshIndicator(
+      onRefresh: LibraryService.instance.refreshFromSupabase,
+      color: AppColors.primaryGreen,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const ChmsuTopHeader(),
@@ -246,6 +250,7 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

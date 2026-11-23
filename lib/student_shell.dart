@@ -18,6 +18,12 @@ class _StudentShellState extends State<StudentShell> {
   int _index = 0;
   String _catalogInitialFilter = 'all';
 
+  @override
+  void initState() {
+    super.initState();
+    LibraryService.instance.refreshFromSupabase();
+  }
+
   void _goToTab(int idx, {String catalogFilter = 'all'}) {
     setState(() {
       _index = idx;

@@ -58,8 +58,11 @@ class _CatalogScreenState extends State<CatalogScreen> {
         const ChmsuTopHeader(),
         const Divider(height: 1, color: AppColors.borderSubtle),
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(18),
+          child: RefreshIndicator(
+            onRefresh: LibraryService.instance.refreshFromSupabase,
+            color: AppColors.primaryGreen,
+            child: ListView(
+              padding: const EdgeInsets.all(18),
             children: [
               const Text(
                 'DISCOVER & RESERVE',
@@ -117,6 +120,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
               ...filtered.map((res) => _ResourceListCard(resource: res)),
             ],
+            ),
           ),
         ),
       ],
