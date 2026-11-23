@@ -6,17 +6,6 @@
   const initials = (user.full_name || 'AD').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
   document.getElementById('librarian-initials').textContent = initials;
 
-  const badgeEl = document.getElementById('mode-badge');
-  if (badgeEl) {
-    if (window.ChmsuApi.isLiveSession()) {
-      badgeEl.className = 'pill pill-green';
-      badgeEl.textContent = 'Live Supabase';
-    } else {
-      badgeEl.className = 'pill pill-amber';
-      badgeEl.textContent = 'Demo Mode';
-    }
-  }
-
   const periodEl = document.getElementById('filter-period');
   const formatEl = document.getElementById('filter-format');
 

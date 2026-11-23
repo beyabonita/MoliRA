@@ -8,15 +8,6 @@
   const initials = fullName.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
   document.getElementById('librarian-initials').textContent = initials;
 
-  const badgeEl = document.getElementById('mode-badge');
-  if (window.ChmsuApi.isLiveSession()) {
-    badgeEl.className = 'pill pill-green';
-    badgeEl.textContent = 'Live Supabase';
-  } else {
-    badgeEl.className = 'pill pill-amber';
-    badgeEl.textContent = 'Demo Mode';
-  }
-
   function fmtDate(iso) {
     if (!iso) return '—';
     return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -25,10 +16,11 @@
   async function loadDashboard() {
     let reservations = [];
     let borrowings = [];
+    let studentCount = 0;
 
     if (window.ChmsuApi.isLiveSession()) {
       const client = window.ChmsuApi.getSupabaseClient();
-      const [rsvQ, borQ] = await Promise.all([
+      const [rsvQ, borQ, stuQ] = await Promise.all([
         client
           .from('reservations')
           .select('id, reference_code, status, created_at, profiles(full_name, student_id), resources(title)')
@@ -38,9 +30,14 @@
           .select('id, transaction_code, status, due_at, profiles(full_name, student_id), resources(title)')
           .in('status', ['borrowed', 'overdue'])
           .order('due_at', { ascending: true }),
+        client
+          .from('profiles')
+          .select('id', { count: 'exact', head: true })
+          .eq('role', 'student'),
       ]);
       if (rsvQ.error) throw rsvQ.error;
       if (borQ.error) throw borQ.error;
+      studentCount = stuQ.count || 0;
 
       reservations = (rsvQ.data || []).map(r => ({
         id: r.id,
@@ -61,8 +58,10 @@
       const state = window.ChmsuApi.getDemoState();
       reservations = state.reservations;
       borrowings = state.borrowings.filter(b => b.status !== 'returned');
+      studentCount = 1;
     }
 
+    document.getElementById('dash-users').textContent = studentCount;
     document.getElementById('dash-pending').textContent = reservations.filter(r => r.status === 'pending').length;
     document.getElementById('dash-ready').textContent = reservations.filter(r => r.status === 'ready').length;
     document.getElementById('dash-active').textContent = borrowings.length;
