@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'register.dart';
 import 'services/library_service.dart';
 import 'theme/app_theme.dart';
@@ -30,9 +31,18 @@ class _LoginScreenState extends State<LoginScreen> {
         studentId: _studentIdController.text.trim(),
         password: _passwordController.text,
       );
+    } on AuthException catch (e) {
+      if (mounted) {
+        final msg = e.message.toLowerCase().contains('invalid login credentials') || e.code == 'invalid_credentials'
+            ? 'Invalid credentials'
+            : e.message;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unable to sign in right now. Please try again.')),
+        );
       }
     } finally {
       if (mounted) setState(() => _loading = false);
