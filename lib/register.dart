@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'services/library_service.dart';
 import 'theme/app_theme.dart';
 
@@ -30,6 +31,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _submit() async {
+    if (_studentIdCtrl.text.trim().isEmpty ||
+        _nameCtrl.text.trim().isEmpty ||
+        _emailCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in Student ID, Full name, and Email.')),
+      );
+      return;
+    }
     if (!_agreed) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please agree to the library borrowing terms.')),
@@ -56,7 +65,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
       );
-      if (ok && mounted) Navigator.pop(context);
+      if (ok && mounted) {
+        Navigator.pop(context);
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not create account. Please try again.')),
+        );
+      }
+    } on AuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
