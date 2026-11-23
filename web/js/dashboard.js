@@ -204,20 +204,44 @@
     }
   }
 
-  document.getElementById('run-alerts-btn').addEventListener('click', async () => {
-    if (window.ChmsuApi.isLiveSession()) {
-      const client = window.ChmsuApi.getSupabaseClient();
-      const { data, error } = await client.rpc('generate_due_and_overdue_notifications');
-      if (error) {
-        window.ChmsuApi.showToast(error.message);
+  const THEME_KEY = 'chmsu_theme';
+  function applyTheme(theme) {
+    const isDark = theme === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    const moon = document.getElementById('theme-icon-moon');
+    const sun = document.getElementById('theme-icon-sun');
+    if (moon) moon.style.display = isDark ? 'none' : 'block';
+    if (sun) sun.style.display = isDark ? 'block' : 'none';
+  }
+
+  applyTheme(localStorage.getItem(THEME_KEY) || 'light');
+
+  const themeToggleBtn = document.getElementById('theme-toggle-btn');
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      localStorage.setItem(THEME_KEY, next);
+      applyTheme(next);
+    });
+  }
+
+  const runAlertsBtn = document.getElementById('run-alerts-btn');
+  if (runAlertsBtn) {
+    runAlertsBtn.addEventListener('click', async () => {
+      if (window.ChmsuApi.isLiveSession()) {
+        const client = window.ChmsuApi.getSupabaseClient();
+        const { data, error } = await client.rpc('generate_due_and_overdue_notifications');
+        if (error) {
+          window.ChmsuApi.showToast(error.message);
+          return;
+        }
+        window.ChmsuApi.showToast(`Dispatched ${data || 0} due-soon/overdue notification(s).`);
+        loadDashboard();
         return;
       }
-      window.ChmsuApi.showToast(`Dispatched ${data || 0} due-soon/overdue notification(s).`);
-      loadDashboard();
-      return;
-    }
-    window.ChmsuApi.showToast('Due-date & overdue check completed.');
-  });
+      window.ChmsuApi.showToast('Due-date & overdue check completed.');
+    });
+  }
 
   document.getElementById('announcement-form').addEventListener('submit', async (e) => {
     e.preventDefault();
