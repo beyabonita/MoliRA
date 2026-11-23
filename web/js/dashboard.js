@@ -20,6 +20,13 @@
 
     if (window.ChmsuApi.isLiveSession()) {
       const client = window.ChmsuApi.getSupabaseClient();
+      const { data: sessionData } = await client.auth.getSession();
+      if (!sessionData?.session) {
+        window.ChmsuApi.showToast('Session expired. Please sign in again.');
+        setTimeout(() => window.ChmsuApi.logout(), 1200);
+        return;
+      }
+
       const [rsvQ, borQ, stuQ] = await Promise.all([
         client
           .from('reservations')
