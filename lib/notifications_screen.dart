@@ -54,9 +54,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 decoration: BoxDecoration(color: AppColors.softGreenBg, borderRadius: BorderRadius.circular(12)),
                 child: Row(
                   children: [
-                    _SegTab('All', 'all'),
-                    _SegTab('Borrowing', 'borrowing'),
-                    _SegTab('Library', 'library'),
+                    _segTab('All', 'all'),
+                    _segTab('Borrowing', 'borrowing'),
+                    _segTab('Library', 'library'),
                   ],
                 ),
               ),
@@ -142,7 +142,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _SegTab(String label, String key) {
+  Widget _segTab(String label, String key) {
     final active = _tab == key;
     return Expanded(
       child: GestureDetector(
