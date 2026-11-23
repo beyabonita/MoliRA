@@ -6,8 +6,8 @@
  */
 (function () {
   const DEFAULT_CONFIG = {
-    supabaseUrl: localStorage.getItem('chmsu_supabase_url') || '',
-    supabaseAnonKey: localStorage.getItem('chmsu_supabase_key') || '',
+    supabaseUrl: localStorage.getItem('chmsu_supabase_url') || 'https://ayjvgmbwhanikoqfkrym.supabase.co',
+    supabaseAnonKey: localStorage.getItem('chmsu_supabase_key') || 'sb_publishable_t0m2Uv5Zq7M6R7SGJve47w_8MmLt0p6',
   };
 
   window.CHMSU_CONFIG = window.CHMSU_CONFIG || DEFAULT_CONFIG;

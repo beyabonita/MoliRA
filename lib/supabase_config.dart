@@ -4,11 +4,11 @@
 abstract final class SupabaseConfig {
   static const url = String.fromEnvironment(
     'SUPABASE_URL',
-    defaultValue: '',
+    defaultValue: 'https://ayjvgmbwhanikoqfkrym.supabase.co',
   );
   static const publishableKey = String.fromEnvironment(
     'SUPABASE_PUBLISHABLE_KEY',
-    defaultValue: '',
+    defaultValue: 'sb_publishable_t0m2Uv5Zq7M6R7SGJve47w_8MmLt0p6',
   );
 
   static bool get isConfigured => url.isNotEmpty && publishableKey.isNotEmpty;
