@@ -1,0 +1,9 @@
+{
+  "name": "CHMSU Library",
+  "short_name": "CHMSU Library",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F9F8F3",
+  "theme_color": "#1B4332",
+  "description": "CHMSU Mobile Library Resource Application"
+}

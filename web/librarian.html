@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CHMSU Library · Librarian Portal Sign In</title>
+  <link rel="stylesheet" href="css/librarian.css" />
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="login-card">
+      <div class="login-hero">
+        <div class="brand" style="padding: 0 0 18px; border-bottom-color: rgba(255,255,255,0.14);">
+          <div class="brand-icon">📖</div>
+          <div>
+            <div class="brand-name">CHMSU Library</div>
+            <div class="brand-tagline">LEARN. DISCOVER. GROW.</div>
+          </div>
+        </div>
+        <h1 class="serif-title" style="font-size: 26px; margin-top: 18px;">Librarian Workspace</h1>
+        <p style="font-size: 13px; color: rgba(255,255,255,0.8); margin-top: 6px;">
+          Carlos Hilado Memorial State University · Talisay campus library
+        </p>
+      </div>
+      <div class="login-body">
+        <h2 style="font-size: 18px; margin-bottom: 4px;">Sign in to continue</h2>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 18px;">
+          Manage reservations, monitor circulation analytics, and generate reports.
+        </p>
+
+        <form id="librarian-login-form">
+          <div class="form-group">
+            <label class="form-label" for="email">Librarian email</label>
+            <input class="form-control" id="email" type="email" value="ana.delacruz@chmsu.edu.ph" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <input class="form-control" id="password" type="password" value="••••••••••" required />
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 11px;">
+            Sign in to Librarian Portal →
+          </button>
+        </form>
+
+        <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-subtle); text-align: center;">
+          <button id="demo-btn" type="button" class="btn btn-outline" style="width: 100%;">
+            Preview with Sample Talisay Data
+          </button>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 10px;">
+            Connected to Supabase when configured in <code>js/supabase-client.js</code>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
+  <script>
+    function enterPortal(user) {
+      localStorage.setItem('chmsu_librarian_session', JSON.stringify(user));
+      window.location.href = 'analytics.html';
+    }
+
+    document.getElementById('demo-btn').addEventListener('click', () => {
+      const state = window.ChmsuApi.getDemoState();
+      enterPortal(state.librarian);
+    });
+
+    document.getElementById('librarian-login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const client = window.ChmsuApi.getSupabaseClient();
+
+      if (client) {
+        const { data, error } = await client.auth.signInWithPassword({ email, password });
+        if (error) {
+          window.ChmsuApi.showToast(error.message);
+          return;
+        }
+        enterPortal({ id: data.user.id, email: data.user.email, full_name: data.user.email, role: 'librarian', campus: 'Talisay' });
+      } else {
+        const state = window.ChmsuApi.getDemoState();
+        enterPortal({ ...state.librarian, email });
+      }
+    });
+  </script>
+</body>
+</html>

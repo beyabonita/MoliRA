@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CHMSU Library · Library Reports</title>
+  <link rel="stylesheet" href="css/librarian.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">📖</div>
+        <div>
+          <div class="brand-name">CHMSU Library</div>
+          <div class="brand-tagline">LEARN. DISCOVER. GROW.</div>
+        </div>
+      </div>
+
+      <div class="nav-section-label">LIBRARIAN WORKSPACE</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="analytics.html">📊 Analytics</a></li>
+        <li><a class="nav-link" href="reservations.html">🔖 Reservations</a></li>
+        <li><a class="nav-link active" href="reports.html">📄 Reports</a></li>
+      </ul>
+
+      <div class="sidebar-library-card">
+        <div class="eyebrow">CURRENT LIBRARY</div>
+        <div class="campus-name">Talisay campus</div>
+        <div class="univ-name">Carlos Hilado Memorial State University</div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-badge">
+          <div class="avatar-circle" id="librarian-initials">AD</div>
+          <div class="user-meta">
+            <div class="name" id="librarian-name">Ana Dela Cruz</div>
+            <div class="role">Librarian · Talisay</div>
+          </div>
+        </div>
+        <button class="btn-logout" onclick="window.ChmsuApi.logout()">Sign out</button>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <header class="topbar">
+        <div class="breadcrumb">Library management / <strong>Reports</strong></div>
+        <div class="topbar-right">
+          <span>19 Oct 2026</span>
+        </div>
+      </header>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <div class="page-eyebrow">FROM RECORDS TO CONTEXT</div>
+            <h1 class="page-title serif-title">Library reports</h1>
+            <p class="page-subtitle">Choose a scope, review the numbers, and prepare a CSV or PDF export.</p>
+          </div>
+        </div>
+
+        <section class="reports-grid">
+          <div class="card no-print">
+            <div class="card-title" style="margin-bottom: 12px;">Build a report</div>
+            <div class="form-label">REPORT TYPE</div>
+
+            <label class="radio-card selected" data-type="resource_usage">
+              <input type="radio" name="report_type" value="resource_usage" checked />
+              <div>
+                <div style="font-size: 13px; font-weight: 600;">Resource usage</div>
+                <div style="font-size: 11px; color: var(--text-muted);">Uses by title and format</div>
+              </div>
+            </label>
+            <label class="radio-card" data-type="borrowing_summary">
+              <input type="radio" name="report_type" value="borrowing_summary" />
+              <div>
+                <div style="font-size: 13px; font-weight: 600;">Borrowing summary</div>
+                <div style="font-size: 11px; color: var(--text-muted);">Current, returned, and overdue</div>
+              </div>
+            </label>
+            <label class="radio-card" data-type="reservation_status">
+              <input type="radio" name="report_type" value="reservation_status" />
+              <div>
+                <div style="font-size: 13px; font-weight: 600;">Reservation status</div>
+                <div style="font-size: 11px; color: var(--text-muted);">Requests across lifecycle states</div>
+              </div>
+            </label>
+
+            <div class="form-group" style="margin-top: 14px;">
+              <label class="form-label" for="rpt-period">Date range</label>
+              <select id="rpt-period" class="form-control">
+                <option value="1–19 Oct 2026">1–19 Oct 2026</option>
+                <option value="Last 7 days">Last 7 days</option>
+                <option value="Last 30 days">Last 30 days</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="rpt-campus">Campus</label>
+              <select id="rpt-campus" class="form-control">
+                <option value="Talisay campus">Talisay campus</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="rpt-format">Resource format</label>
+              <select id="rpt-format" class="form-control">
+                <option value="all">All formats</option>
+                <option value="print">Print books only</option>
+                <option value="ebook">E-resources only</option>
+              </select>
+            </div>
+
+            <button id="generate-preview-btn" class="btn btn-primary" style="width: 100%;">
+              ↻ Generate preview
+            </button>
+          </div>
+
+          <div class="card">
+            <div class="card-title-row no-print">
+              <div class="card-title">📄 Report preview</div>
+              <div style="display: flex; gap: 8px;">
+                <button id="export-csv-btn" class="btn btn-outline btn-sm">⬇ CSV</button>
+                <button id="export-pdf-btn" class="btn btn-primary btn-sm">⬇ PDF</button>
+              </div>
+            </div>
+
+            <div style="border: 1px solid var(--border-subtle); border-radius: 12px; padding: 22px;">
+              <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: var(--text-muted);">
+                CARLOS HILADO MEMORIAL STATE UNIVERSITY
+              </div>
+              <h2 id="preview-title" class="serif-title" style="font-size: 22px; margin-top: 4px;">Resource usage report</h2>
+              <div id="preview-subtitle" style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+                Talisay campus library · 1–19 Oct 2026 · All formats
+              </div>
+              <div id="preview-ref" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                RPT-261019-008 · Generated just now
+              </div>
+
+              <div class="preview-kpis" id="preview-kpis"></div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead id="preview-thead"></thead>
+                  <tbody id="preview-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card no-print">
+          <div class="card-title-row">
+            <div class="card-title">Generated reports</div>
+            <span style="font-size: 12px; color: var(--text-muted);">Saved export log</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Report / Reference</th>
+                  <th>Reporting Period</th>
+                  <th>Generated</th>
+                  <th>Format</th>
+                  <th style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="history-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/reports.js"></script>
+</body>
+</html>

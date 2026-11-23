@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CHMSU Library · Analytics Overview</title>
+  <link rel="stylesheet" href="css/librarian.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">📖</div>
+        <div>
+          <div class="brand-name">CHMSU Library</div>
+          <div class="brand-tagline">LEARN. DISCOVER. GROW.</div>
+        </div>
+      </div>
+
+      <div class="nav-section-label">LIBRARIAN WORKSPACE</div>
+      <ul class="nav-list">
+        <li><a class="nav-link active" href="analytics.html">📊 Analytics</a></li>
+        <li><a class="nav-link" href="reservations.html">🔖 Reservations</a></li>
+        <li><a class="nav-link" href="reports.html">📄 Reports</a></li>
+      </ul>
+
+      <div class="sidebar-library-card">
+        <div class="eyebrow">CURRENT LIBRARY</div>
+        <div class="campus-name">Talisay campus</div>
+        <div class="univ-name">Carlos Hilado Memorial State University</div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-badge">
+          <div class="avatar-circle" id="librarian-initials">AD</div>
+          <div class="user-meta">
+            <div class="name" id="librarian-name">Ana Dela Cruz</div>
+            <div class="role">Librarian · Talisay</div>
+          </div>
+        </div>
+        <button class="btn-logout" onclick="window.ChmsuApi.logout()">Sign out</button>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <header class="topbar">
+        <div class="breadcrumb">Library management / <strong>Analytics</strong></div>
+        <div class="topbar-right">
+          <span class="pill pill-amber" id="mode-badge">Live / Demo Ready</span>
+          <span id="current-date">19 Oct 2026</span>
+        </div>
+      </header>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <div class="page-eyebrow">TALISAY CAMPUS LIBRARY</div>
+            <h1 class="page-title serif-title">A clearer view of library use.</h1>
+            <p class="page-subtitle">Understand demand, monitor circulation, and plan your next steps.</p>
+          </div>
+          <a href="reports.html" class="btn btn-primary">📄 Create report</a>
+        </div>
+
+        <div class="filter-bar">
+          <div class="filter-controls">
+            <select id="filter-period" class="select-pill">
+              <option value="oct">Period: 1–19 Oct 2026</option>
+              <option value="7d">Period: Last 7 days</option>
+              <option value="30d">Period: Last 30 days</option>
+            </select>
+            <select id="filter-format" class="select-pill">
+              <option value="all">Resource type: All formats</option>
+              <option value="print">Resource type: Print books</option>
+              <option value="ebook">Resource type: E-resources</option>
+            </select>
+            <select id="filter-campus" class="select-pill">
+              <option value="Talisay">Campus: Talisay</option>
+            </select>
+          </div>
+          <span style="font-size: 12px; color: var(--text-muted);" id="snapshot-time">Snapshot as of 19 Oct · 10:00 AM</span>
+        </div>
+
+        <section class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-header"><span>Total resource uses</span><span>📈</span></div>
+            <div class="kpi-value" id="kpi-total-uses">0</div>
+            <div class="kpi-caption">Print loans + digital accesses</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header"><span>Print borrowings</span><span>📖</span></div>
+            <div class="kpi-value" id="kpi-print-loans">0</div>
+            <div class="kpi-caption">Checkout transactions in period</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header"><span>Reservations created</span><span>🔖</span></div>
+            <div class="kpi-value" id="kpi-reservations">0</div>
+            <div class="kpi-caption">All lifecycle states included</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header"><span>Digital accesses</span><span>💻</span></div>
+            <div class="kpi-value" id="kpi-digital">0</div>
+            <div class="kpi-caption">E-resource access events</div>
+          </div>
+        </section>
+
+        <section class="two-col-grid">
+          <div class="card">
+            <div class="card-title-row">
+              <div>
+                <div class="card-title">Resource usage over time</div>
+                <div class="card-subtitle" id="chart-subtitle">Number of uses · 1–19 Oct 2026</div>
+              </div>
+              <div style="display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary);">
+                <span><strong style="color: var(--green-800);">●</strong> Print loans</span>
+                <span><strong style="color: var(--amber-600);">●</strong> Digital accesses</span>
+              </div>
+            </div>
+            <div id="usage-chart" style="width: 100%; height: 240px;"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title-row">
+              <div class="card-title">Service snapshot</div>
+            </div>
+            <div style="margin-bottom: 18px;">
+              <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 8px;">
+                <span>Reservations created</span>
+                <span id="snap-rsv-total">0</span>
+              </div>
+              <div id="rsv-bar" style="display: flex; height: 8px; border-radius: 99px; overflow: hidden; gap: 2px; margin-bottom: 10px;"></div>
+              <div id="rsv-breakdown" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 12px; color: var(--text-secondary);"></div>
+            </div>
+
+            <div style="padding-top: 16px; border-top: 1px solid var(--border-subtle);">
+              <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 12px;">
+                <span>Print loans in period</span>
+                <span id="snap-loan-total">0</span>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                <div>
+                  <div style="font-size: 20px; font-weight: 700; color: var(--green-800);" id="snap-returned">0</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Returned</div>
+                </div>
+                <div>
+                  <div style="font-size: 20px; font-weight: 700; color: var(--text-primary);" id="snap-current">0</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Current</div>
+                </div>
+                <div>
+                  <div style="font-size: 20px; font-weight: 700; color: var(--red-600);" id="snap-overdue">0</div>
+                  <div style="font-size: 11px; color: var(--text-muted);">Overdue</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="two-col-grid">
+          <div class="card">
+            <div class="card-title-row">
+              <div>
+                <div class="card-title">Most-used resources</div>
+                <div class="card-subtitle">Aggregated by title across formats · Selected period</div>
+              </div>
+              <a href="reports.html" style="font-size: 13px; font-weight: 600; color: var(--green-800); text-decoration: none;">View report →</a>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Resource</th>
+                    <th style="text-align: right;">Print</th>
+                    <th style="text-align: right;">Digital</th>
+                    <th style="text-align: right;">Uses</th>
+                  </tr>
+                </thead>
+                <tbody id="top-resources-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="insights-card">
+            <div class="card-title">💡 Key insights</div>
+            <div class="insight-stat">
+              <div class="big" id="insight-pct">72.1%</div>
+              <div class="desc">of resource uses are print borrowings.</div>
+            </div>
+            <div class="insight-stat">
+              <div class="big" id="insight-top-uses">66 uses</div>
+              <div class="desc" id="insight-top-desc">make Research Methods in Education the most-used title.</div>
+            </div>
+            <div class="insight-stat">
+              <div class="big" id="insight-overdue">1 overdue</div>
+              <div class="desc">unreturned print loan needs circulation follow-up.</div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/analytics.js"></script>
+</body>
+</html>
