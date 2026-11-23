@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CHMSU Library · Catalog Management</title>
+  <link rel="icon" type="image/png" href="assets/chmsu-logo.png" />
+  <link rel="stylesheet" href="css/librarian.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="assets/chmsu-logo.png" alt="CHMSU Logo" class="brand-logo" />
+        <div>
+          <div class="brand-name">CHMSU Library</div>
+          <div class="brand-tagline">LEARN. DISCOVER. GROW.</div>
+        </div>
+      </div>
+
+      <div class="nav-section-label">LIBRARIAN WORKSPACE</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="dashboard.html">🏠 Dashboard</a></li>
+        <li><a class="nav-link" href="reservations.html">🔖 Reservations</a></li>
+        <li><a class="nav-link active" href="catalog.html">📚 Catalog</a></li>
+        <li><a class="nav-link" href="analytics.html">📊 Analytics</a></li>
+        <li><a class="nav-link" href="reports.html">📄 Reports</a></li>
+      </ul>
+
+      <div class="sidebar-library-card">
+        <div class="eyebrow">CURRENT LIBRARY</div>
+        <div class="campus-name">Talisay campus</div>
+        <div class="univ-name">Carlos Hilado Memorial State University</div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-badge">
+          <div class="avatar-circle" id="librarian-initials">AD</div>
+          <div class="user-meta">
+            <div class="name" id="librarian-name">Ana Dela Cruz</div>
+            <div class="role">Librarian · Talisay</div>
+          </div>
+        </div>
+        <button class="btn-logout" onclick="window.ChmsuApi.logout()">Sign out</button>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <header class="topbar">
+        <div class="breadcrumb">Library management / <strong>Catalog</strong></div>
+        <div class="topbar-right">
+          <span class="pill pill-green" id="catalog-count-pill">0 resources</span>
+        </div>
+      </header>
+
+      <main class="page-content">
+        <div class="page-header">
+          <div>
+            <div class="page-eyebrow">INVENTORY &amp; HOLDINGS</div>
+            <h1 class="page-title serif-title">Library catalog</h1>
+            <p class="page-subtitle">Add print books or e-resources and keep available copy counts accurate.</p>
+          </div>
+          <button id="toggle-add-btn" class="btn btn-primary">+ Add resource</button>
+        </div>
+
+        <div class="card" id="add-resource-card" style="display:none;margin-bottom:20px;">
+          <div class="card-title-row">
+            <div class="card-title">Add new library resource</div>
+            <button type="button" class="btn btn-outline btn-sm" id="close-add-btn">Close</button>
+          </div>
+          <form id="add-resource-form">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+              <div class="form-group">
+                <label class="form-label" for="res-title">Title</label>
+                <input class="form-control" id="res-title" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="res-authors">Authors</label>
+                <input class="form-control" id="res-authors" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="res-edition">Edition / Year</label>
+                <input class="form-control" id="res-edition" placeholder="e.g. 3rd edition · 2023" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="res-format">Format</label>
+                <select class="form-control" id="res-format">
+                  <option value="print">Print book</option>
+                  <option value="ebook">E-book</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="res-subject">Subject</label>
+                <input class="form-control" id="res-subject" placeholder="e.g. Education" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="res-call">Call number</label>
+                <input class="form-control" id="res-call" placeholder="e.g. LB1028 C64 2023" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="res-shelf">Shelf / Repository</label>
+                <input class="form-control" id="res-shelf" value="Talisay · Main section" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="res-copies">Total copies</label>
+                <input class="form-control" id="res-copies" type="number" min="1" value="3" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="res-color">Cover color</label>
+                <select class="form-control" id="res-color">
+                  <option value="#1B4332">Forest Green</option>
+                  <option value="#345063">Slate Blue</option>
+                  <option value="#9A5B3C">Terracotta</option>
+                  <option value="#7D6B44">Warm Olive</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="res-desc">Description</label>
+              <textarea class="form-control" id="res-desc" rows="2" placeholder="Brief summary of the resource..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Save to catalog</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="filter-bar" style="margin-bottom:14px;">
+            <div class="filter-controls">
+              <input id="catalog-search" class="input-pill" style="min-width:260px;" type="search" placeholder="Search title, author, or subject..." />
+              <select id="catalog-format" class="select-pill">
+                <option value="all">All formats</option>
+                <option value="print">Print books</option>
+                <option value="ebook">E-books</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Title / Authors</th>
+                  <th>Format</th>
+                  <th>Subject / Shelf</th>
+                  <th>Call Number</th>
+                  <th>Copies (Avail / Total)</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="catalog-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/catalog.js"></script>
+</body>
+</html>
