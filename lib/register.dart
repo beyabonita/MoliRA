@@ -57,6 +57,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: _passwordCtrl.text,
       );
       if (ok && mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Registration failed: $e')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }

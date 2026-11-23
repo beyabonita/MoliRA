@@ -14,66 +14,84 @@
   }
 
   async function loadDashboard() {
-    let reservations = [];
-    let borrowings = [];
-    let studentCount = 0;
+    try {
+      let reservations = [];
+      let borrowings = [];
+      let students = [];
 
-    if (window.ChmsuApi.isLiveSession()) {
-      const client = window.ChmsuApi.getSupabaseClient();
-      const { data: sessionData } = await client.auth.getSession();
-      if (!sessionData?.session) {
-        window.ChmsuApi.showToast('Session expired. Please sign in again.');
-        setTimeout(() => window.ChmsuApi.logout(), 1200);
-        return;
+      if (window.ChmsuApi.isLiveSession()) {
+        const client = window.ChmsuApi.getSupabaseClient();
+        const { data: sessionData } = await client.auth.getSession();
+        if (!sessionData?.session) {
+          window.ChmsuApi.showToast('Session expired. Please sign in again.');
+          setTimeout(() => window.ChmsuApi.logout(), 1200);
+          return;
+        }
+
+        const [rsvQ, borQ, stuQ] = await Promise.all([
+          client
+            .from('reservations')
+            .select('id, reference_code, status, created_at, profiles(full_name, student_id), resources(title)')
+            .order('created_at', { ascending: false }),
+          client
+            .from('borrowings')
+            .select('id, transaction_code, status, due_at, profiles(full_name, student_id), resources(title)')
+            .in('status', ['borrowed', 'overdue'])
+            .order('due_at', { ascending: true }),
+          client
+            .from('profiles')
+            .select('id, student_id, full_name, email, campus')
+            .eq('role', 'student')
+            .order('created_at', { ascending: false }),
+        ]);
+        if (rsvQ.error) throw rsvQ.error;
+        if (borQ.error) throw borQ.error;
+        if (stuQ.error) throw stuQ.error;
+        students = stuQ.data || [];
+
+        reservations = (rsvQ.data || []).map(r => ({
+          id: r.id,
+          reference_code: r.reference_code,
+          student_name: r.profiles?.full_name || 'Student',
+          resource_title: r.resources?.title || 'Resource',
+          status: r.status,
+        }));
+        borrowings = (borQ.data || []).map(b => ({
+          id: b.id,
+          transaction_code: b.transaction_code,
+          student_name: b.profiles?.full_name || 'Student',
+          resource_title: b.resources?.title || 'Resource',
+          status: b.status,
+          due_at: fmtDate(b.due_at),
+        }));
+      } else {
+        const state = window.ChmsuApi.getDemoState();
+        reservations = state.reservations;
+        borrowings = state.borrowings.filter(b => b.status !== 'returned');
+        students = [{ student_id: '2024-01842', full_name: 'Maria Santos', email: 'maria.santos@chmsu.edu.ph', campus: 'Talisay' }];
       }
 
-      const [rsvQ, borQ, stuQ] = await Promise.all([
-        client
-          .from('reservations')
-          .select('id, reference_code, status, created_at, profiles(full_name, student_id), resources(title)')
-          .order('created_at', { ascending: false }),
-        client
-          .from('borrowings')
-          .select('id, transaction_code, status, due_at, profiles(full_name, student_id), resources(title)')
-          .in('status', ['borrowed', 'overdue'])
-          .order('due_at', { ascending: true }),
-        client
-          .from('profiles')
-          .select('id')
-          .eq('role', 'student'),
-      ]);
-      if (rsvQ.error) throw rsvQ.error;
-      if (borQ.error) throw borQ.error;
-      if (stuQ.error) throw stuQ.error;
-      studentCount = (stuQ.data || []).length;
+      document.getElementById('dash-users').textContent = students.length;
+      document.getElementById('dash-pending').textContent = reservations.filter(r => r.status === 'pending').length;
+      document.getElementById('dash-ready').textContent = reservations.filter(r => r.status === 'ready').length;
+      document.getElementById('dash-active').textContent = borrowings.length;
+      document.getElementById('dash-overdue').textContent = borrowings.filter(b => b.status === 'overdue').length;
 
-      reservations = (rsvQ.data || []).map(r => ({
-        id: r.id,
-        reference_code: r.reference_code,
-        student_name: r.profiles?.full_name || 'Student',
-        resource_title: r.resources?.title || 'Resource',
-        status: r.status,
-      }));
-      borrowings = (borQ.data || []).map(b => ({
-        id: b.id,
-        transaction_code: b.transaction_code,
-        student_name: b.profiles?.full_name || 'Student',
-        resource_title: b.resources?.title || 'Resource',
-        status: b.status,
-        due_at: fmtDate(b.due_at),
-      }));
-    } else {
-      const state = window.ChmsuApi.getDemoState();
-      reservations = state.reservations;
-      borrowings = state.borrowings.filter(b => b.status !== 'returned');
-      studentCount = 1;
-    }
-
-    document.getElementById('dash-users').textContent = studentCount;
-    document.getElementById('dash-pending').textContent = reservations.filter(r => r.status === 'pending').length;
-    document.getElementById('dash-ready').textContent = reservations.filter(r => r.status === 'ready').length;
-    document.getElementById('dash-active').textContent = borrowings.length;
-    document.getElementById('dash-overdue').textContent = borrowings.filter(b => b.status === 'overdue').length;
+      const studentsBody = document.getElementById('dash-students-body');
+      if (studentsBody) {
+        if (students.length === 0) {
+          studentsBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px;">No registered student accounts yet.</td></tr>';
+        } else {
+          studentsBody.innerHTML = students.map(s => `
+            <tr>
+              <td style="font-weight:600;color:var(--green-800);">${s.student_id || '—'}</td>
+              <td style="font-weight:600;">${s.full_name || '—'}</td>
+              <td>${s.email || '—'}</td>
+              <td>${s.campus || 'Talisay'}</td>
+            </tr>
+          `).join('');
+        }
+      }
 
     const queue = reservations.filter(r => ['pending', 'approved', 'ready'].includes(r.status)).slice(0, 6);
     const queueBody = document.getElementById('dash-queue-body');
@@ -130,6 +148,9 @@
       loansBody.querySelectorAll('[data-return-id]').forEach(btn => {
         btn.addEventListener('click', () => handleReturn(btn.dataset.returnId));
       });
+    }
+    } catch (err) {
+      window.ChmsuApi.showToast(err?.message || 'Failed to load dashboard data.');
     }
   }
 

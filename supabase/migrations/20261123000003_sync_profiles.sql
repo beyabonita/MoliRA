@@ -1,3 +1,8 @@
+drop policy if exists "Users can insert own profile" on public.profiles;
+create policy "Users can insert own profile"
+  on public.profiles for insert
+  with check (auth.uid() = id);
+
 -- Backfill any auth.users that do not yet have a row in public.profiles
 insert into public.profiles (id, student_id, full_name, email, role, campus)
 select

@@ -78,6 +78,20 @@ class LibraryService extends ChangeNotifier {
         },
       );
       if (res.user != null) {
+        if (res.session != null) {
+          try {
+            await client.from('profiles').upsert({
+              'id': res.user!.id,
+              'student_id': studentId,
+              'full_name': fullName,
+              'email': email,
+              'role': 'student',
+              'campus': 'Talisay',
+            });
+          } catch (_) {
+            // Trigger handle_new_user may have already created the profile.
+          }
+        }
         currentUser = StudentProfile(
           id: res.user!.id,
           studentId: studentId,
