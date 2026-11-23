@@ -12,8 +12,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _studentIdController = TextEditingController(text: '2024-01842');
-  final _passwordController = TextEditingController(text: 'password123');
+  final _studentIdController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscure = true;
   bool _loading = false;
 
@@ -31,17 +31,16 @@ class _LoginScreenState extends State<LoginScreen> {
         studentId: _studentIdController.text.trim(),
         password: _passwordController.text,
       );
-    } on AuthException catch (e) {
+    } on AuthException {
       if (mounted) {
-        final msg = e.message.toLowerCase().contains('invalid login credentials') || e.code == 'invalid_credentials'
-            ? 'Invalid credentials'
-            : e.message;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid credential')),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unable to sign in right now. Please try again.')),
+          const SnackBar(content: Text('Invalid credential')),
         );
       }
     } finally {

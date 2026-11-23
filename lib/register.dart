@@ -10,9 +10,9 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final _studentIdCtrl = TextEditingController(text: '2024-01842');
-  final _nameCtrl = TextEditingController(text: 'Maria Santos');
-  final _emailCtrl = TextEditingController(text: 'maria.santos@chmsu.edu.ph');
+  final _studentIdCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
   bool _agreed = true;
