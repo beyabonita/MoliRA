@@ -17,8 +17,61 @@
     });
   });
 
-  function buildReport() {
-    const state = window.ChmsuApi.getDemoState();
+  async function fetchLiveReportState() {
+    const client = window.ChmsuApi.getSupabaseClient();
+    const [resQ, borQ, rsvQ, digQ, rptQ] = await Promise.all([
+      client.from('resources').select('*'),
+      client.from('borrowings').select('id, transaction_code, status, due_at, resource_id, profiles(full_name), resources(title)'),
+      client.from('reservations').select('id, reference_code, status, pickup_deadline, profiles(full_name), resources(title)'),
+      client.from('digital_access_logs').select('id, resource_id'),
+      client.from('generated_reports').select('*, profiles(full_name)').order('created_at', { ascending: false }).limit(15),
+    ]);
+    if (resQ.error) throw resQ.error;
+
+    return {
+      resources: (resQ.data || []).map(r => ({
+        ...r,
+        print_uses: (borQ.data || []).filter(b => b.resource_id === r.id).length,
+        digital_uses: (digQ.data || []).filter(d => d.resource_id === r.id).length,
+      })),
+      borrowings: (borQ.data || []).map(b => ({
+        transaction_code: b.transaction_code,
+        student_name: b.profiles?.full_name || 'Student',
+        resource_title: b.resources?.title || 'Resource',
+        status: b.status,
+        due_at: b.due_at ? new Date(b.due_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—',
+      })),
+      reservations: (rsvQ.data || []).map(r => ({
+        reference_code: r.reference_code,
+        student_name: r.profiles?.full_name || 'Student',
+        resource_title: r.resources?.title || 'Resource',
+        status: r.status,
+        pickup_label: r.pickup_deadline ? new Date(r.pickup_deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '—',
+      })),
+      reports: (rptQ.data || []).map(rp => ({
+        report_code: rp.report_code,
+        report_type: rp.report_type.replace('_', ' '),
+        generated_by: rp.profiles?.full_name || 'Librarian',
+        period_label: rp.period_label,
+        created_label: new Date(rp.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+        format: rp.format,
+      })),
+    };
+  }
+
+  async function buildReport() {
+    let state;
+    if (window.ChmsuApi.isLiveSession()) {
+      try {
+        state = await fetchLiveReportState();
+      } catch (err) {
+        window.ChmsuApi.showToast('Supabase error: ' + err.message);
+        state = window.ChmsuApi.getDemoState();
+      }
+    } else {
+      state = window.ChmsuApi.getDemoState();
+    }
+
     const type = document.querySelector('input[name="report_type"]:checked').value;
     const period = document.getElementById('rpt-period').value;
     const campus = document.getElementById('rpt-campus').value;
@@ -117,7 +170,41 @@
     `).join('');
   }
 
-  function downloadCsv() {
+  async function logReportExport(exportFormat) {
+    const type = document.querySelector('input[name="report_type"]:checked').value;
+    const period = document.getElementById('rpt-period').value;
+    const formatFilter = document.getElementById('rpt-format').value;
+    const code = `RPT-261019-${Math.floor(100 + Math.random() * 800)}`;
+
+    if (window.ChmsuApi.isLiveSession()) {
+      const client = window.ChmsuApi.getSupabaseClient();
+      await client.from('generated_reports').insert({
+        report_code: code,
+        report_type: type,
+        period_label: period,
+        campus: 'Talisay',
+        resource_format: formatFilter,
+        generated_by: user.id,
+        format: exportFormat,
+      });
+      await buildReport();
+      return;
+    }
+
+    const state = window.ChmsuApi.getDemoState();
+    state.reports.unshift({
+      report_code: code,
+      report_type: document.getElementById('preview-title').textContent.replace(' report', ''),
+      generated_by: user.full_name || 'Ana Dela Cruz',
+      period_label: period,
+      created_label: 'Just now',
+      format: exportFormat,
+    });
+    window.ChmsuApi.saveDemoState(state);
+    renderHistory(state.reports);
+  }
+
+  async function downloadCsv() {
     const lines = [currentHeaders.join(','), ...currentRows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))];
     const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -127,28 +214,19 @@
     a.click();
     URL.revokeObjectURL(url);
 
-    const state = window.ChmsuApi.getDemoState();
-    state.reports.unshift({
-      report_code: `RPT-261019-${Math.floor(100 + Math.random() * 800)}`,
-      report_type: document.getElementById('preview-title').textContent.replace(' report', ''),
-      generated_by: user.full_name || 'Ana Dela Cruz',
-      period_label: document.getElementById('rpt-period').value,
-      created_label: 'Just now',
-      format: 'CSV',
-    });
-    window.ChmsuApi.saveDemoState(state);
-    renderHistory(state.reports);
+    await logReportExport('CSV');
     window.ChmsuApi.showToast('CSV report downloaded.');
   }
 
   window._downloadCurrentCsv = downloadCsv;
 
-  document.getElementById('generate-preview-btn').addEventListener('click', () => {
-    buildReport();
+  document.getElementById('generate-preview-btn').addEventListener('click', async () => {
+    await buildReport();
     window.ChmsuApi.showToast('Report preview updated.');
   });
   document.getElementById('export-csv-btn').addEventListener('click', downloadCsv);
-  document.getElementById('export-pdf-btn').addEventListener('click', () => {
+  document.getElementById('export-pdf-btn').addEventListener('click', async () => {
+    await logReportExport('PDF');
     window.print();
   });
 

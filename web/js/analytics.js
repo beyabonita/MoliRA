@@ -6,13 +6,76 @@
   const initials = (user.full_name || 'AD').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
   document.getElementById('librarian-initials').textContent = initials;
 
+  const badgeEl = document.getElementById('mode-badge');
+  if (badgeEl) {
+    if (window.ChmsuApi.isLiveSession()) {
+      badgeEl.className = 'pill pill-green';
+      badgeEl.textContent = 'Live Supabase';
+    } else {
+      badgeEl.className = 'pill pill-amber';
+      badgeEl.textContent = 'Demo Mode';
+    }
+  }
+
   const periodEl = document.getElementById('filter-period');
   const formatEl = document.getElementById('filter-format');
 
+  async function fetchLiveAnalyticsData() {
+    const client = window.ChmsuApi.getSupabaseClient();
+    const [resQ, rsvQ, borQ, digQ] = await Promise.all([
+      client.from('resources').select('*'),
+      client.from('reservations').select('id, status, created_at, resource_id'),
+      client.from('borrowings').select('id, status, borrowed_at, resource_id'),
+      client.from('digital_access_logs').select('id, accessed_at, resource_id'),
+    ]);
+
+    if (resQ.error) throw resQ.error;
+
+    const resources = (resQ.data || []).map(r => {
+      const printUses = (borQ.data || []).filter(b => b.resource_id === r.id).length;
+      const digitalUses = (digQ.data || []).filter(d => d.resource_id === r.id).length;
+      return { ...r, print_uses: printUses, digital_uses: digitalUses };
+    });
+
+    const buckets = {};
+    const addToBucket = (iso, kind) => {
+      const d = new Date(iso);
+      const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      if (!buckets[label]) buckets[label] = { label, print: 0, digital: 0 };
+      buckets[label][kind] += 1;
+    };
+    (borQ.data || []).forEach(b => addToBucket(b.borrowed_at, 'print'));
+    (digQ.data || []).forEach(d => addToBucket(d.accessed_at, 'digital'));
+    const timeseries = Object.values(buckets).slice(-4);
+    if (timeseries.length === 0) {
+      timeseries.push({ label: 'Today', print: 0, digital: 0 });
+    }
+
+    return {
+      resources,
+      reservations: rsvQ.data || [],
+      borrowings: borQ.data || [],
+      timeseries,
+    };
+  }
+
   async function loadAnalytics() {
-    const state = window.ChmsuApi.getDemoState();
+    let state;
+    if (window.ChmsuApi.isLiveSession()) {
+      try {
+        state = await fetchLiveAnalyticsData();
+      } catch (err) {
+        window.ChmsuApi.showToast('Supabase fetch error: ' + err.message);
+        state = window.ChmsuApi.getDemoState();
+      }
+    } else {
+      state = window.ChmsuApi.getDemoState();
+    }
+
     const formatFilter = formatEl.value;
-    const periodScale = periodEl.value === '7d' ? 0.45 : periodEl.value === '30d' ? 1.25 : 1;
+    const periodScale = window.ChmsuApi.isLiveSession()
+      ? 1
+      : (periodEl.value === '7d' ? 0.45 : periodEl.value === '30d' ? 1.25 : 1);
 
     const resources = state.resources.filter(r => formatFilter === 'all' || r.format === formatFilter);
     const totalPrint = Math.round(resources.reduce((s, r) => s + r.print_uses, 0) * periodScale);
@@ -41,15 +104,17 @@
 
   function renderChart(series, scale, formatFilter) {
     const container = document.getElementById('usage-chart');
-    const maxVal = 90;
+    const maxRaw = Math.max(10, ...series.map(pt => Math.max(pt.print * scale, pt.digital * scale)));
+    const maxVal = Math.ceil(maxRaw / 10) * 10;
     const width = 620;
     const height = 220;
     const chartBottom = 175;
-    const groupWidth = width / series.length;
+    const groupWidth = width / Math.max(1, series.length);
 
     let svg = `<svg viewBox="0 0 ${width} ${height}" style="width:100%;height:100%;overflow:visible;">`;
-    [0, 20, 40, 60, 80].forEach(tick => {
-      const y = chartBottom - (tick / maxVal) * 145;
+    [0, 0.25, 0.5, 0.75, 1].forEach(ratio => {
+      const tick = Math.round(maxVal * ratio);
+      const y = chartBottom - ratio * 145;
       svg += `<line x1="36" y1="${y}" x2="${width - 10}" y2="${y}" stroke="#ECE9DF" stroke-dasharray="3,3" />`;
       svg += `<text x="26" y="${y + 4}" text-anchor="end" font-size="11" fill="#7C847E">${tick}</text>`;
     });
@@ -57,7 +122,7 @@
     series.forEach((pt, idx) => {
       const pVal = formatFilter === 'ebook' ? 0 : Math.round(pt.print * scale);
       const dVal = formatFilter === 'print' ? 0 : Math.round(pt.digital * scale);
-      const cx = 56 + idx * groupWidth + groupWidth * 0.25;
+      const cx = 56 + idx * groupWidth + groupWidth * 0.2;
       const pH = Math.min(145, (pVal / maxVal) * 145);
       const dH = Math.min(145, (dVal / maxVal) * 145);
 

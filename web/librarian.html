@@ -279,7 +279,25 @@
           window.ChmsuApi.showToast(error.message);
           return;
         }
-        enterPortal({ id: data.user.id, email: data.user.email, full_name: data.user.email, role: 'librarian', campus: 'Talisay' });
+        const { data: profile } = await client
+          .from('profiles')
+          .select('full_name, role, campus')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        if (profile && profile.role !== 'librarian') {
+          await client.auth.signOut();
+          window.ChmsuApi.showToast('Librarian role required to access this portal.');
+          return;
+        }
+        enterPortal({
+          id: data.user.id,
+          email: data.user.email,
+          full_name: profile?.full_name || data.user.email,
+          role: profile?.role || 'librarian',
+          campus: profile?.campus || 'Talisay',
+          is_supabase: true,
+        });
       } else {
         const state = window.ChmsuApi.getDemoState();
         enterPortal({ ...state.librarian, email });

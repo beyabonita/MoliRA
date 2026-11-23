@@ -275,19 +275,31 @@
     }, 3200);
   }
 
+  function isLiveSession() {
+    const raw = localStorage.getItem('chmsu_librarian_session');
+    if (!raw || !hasSupabase()) return false;
+    try {
+      const s = JSON.parse(raw);
+      return Boolean(s && s.is_supabase);
+    } catch {
+      return false;
+    }
+  }
+
   window.ChmsuApi = {
     hasSupabase,
     getSupabaseClient,
+    isLiveSession,
     getDemoState,
     saveDemoState,
     showToast,
     requireSession() {
       const session = localStorage.getItem('chmsu_librarian_session');
-      if (!session && !hasSupabase()) {
+      if (!session) {
         window.location.href = 'librarian.html';
         return null;
       }
-      return JSON.parse(session || JSON.stringify(SEED_DEMO.librarian));
+      return JSON.parse(session);
     },
     logout() {
       localStorage.removeItem('chmsu_librarian_session');

@@ -20,16 +20,25 @@ class LibraryService extends ChangeNotifier {
   Future<bool> signIn({required String studentId, required String password}) async {
     if (SupabaseConfig.isConfigured) {
       final client = Supabase.instance.client;
-      // Lookup email by student_id or sign in with university email
-      final email = studentId.contains('@') ? studentId : '$studentId@chmsu.edu.ph';
+      String email = studentId;
+      if (!studentId.contains('@')) {
+        final resolved = await client.rpc('get_email_by_student_id', params: {'p_student_id': studentId});
+        email = (resolved as String?)?.isNotEmpty == true ? resolved! : '$studentId@chmsu.edu.ph';
+      }
       final res = await client.auth.signInWithPassword(email: email, password: password);
       if (res.user != null) {
+        final profile = await client
+            .from('profiles')
+            .select('student_id, full_name, email, campus')
+            .eq('id', res.user!.id)
+            .maybeSingle();
+
         currentUser = StudentProfile(
           id: res.user!.id,
-          studentId: studentId,
-          fullName: res.user!.userMetadata?['full_name'] ?? 'Maria Santos',
-          email: res.user!.email ?? email,
-          campus: 'Talisay',
+          studentId: profile?['student_id'] ?? studentId,
+          fullName: profile?['full_name'] ?? res.user!.userMetadata?['full_name'] ?? 'Student',
+          email: profile?['email'] ?? res.user!.email ?? email,
+          campus: profile?['campus'] ?? 'Talisay',
         );
         await refreshFromSupabase();
         notifyListeners();
@@ -104,6 +113,8 @@ class LibraryService extends ChangeNotifier {
   Future<void> refreshFromSupabase() async {
     if (!SupabaseConfig.isConfigured) return;
     final client = Supabase.instance.client;
+    final uid = currentUser?.id;
+
     final resRows = await client.from('resources').select().order('title');
     resources = (resRows as List).map((r) => LibraryResource(
       id: r['id'],
@@ -121,6 +132,76 @@ class LibraryService extends ChangeNotifier {
       coverColor: Color(int.parse((r['cover_color'] ?? '#1B4332').replaceFirst('#', '0xFF'))),
       coverTag: r['cover_tag'] ?? '',
     )).toList();
+
+    if (uid != null) {
+      final rsvRows = await client
+          .from('reservations')
+          .select('id, reference_code, resource_id, status, pickup_deadline, updated_at, resources(title, edition_year, format)')
+          .eq('student_id', uid)
+          .order('created_at', ascending: false);
+
+      reservations = (rsvRows as List).map((r) {
+        final resObj = r['resources'] as Map<String, dynamic>?;
+        final deadline = r['pickup_deadline'] as String?;
+        return ReservationItem(
+          id: r['id'],
+          referenceCode: r['reference_code'],
+          resourceId: r['resource_id'],
+          resourceTitle: resObj?['title'] ?? 'Resource',
+          resourceMeta: '${resObj?['edition_year'] ?? ''} · ${resObj?['format'] == 'ebook' ? 'E-book' : 'Print book'}',
+          status: r['status'],
+          pickupLabel: deadline != null ? 'Collect by ${deadline.substring(0, 10)}' : (r['status'] == 'pending' ? 'Awaiting librarian review' : '—'),
+          updatedLabel: 'Updated ${(r['updated_at'] as String).substring(0, 10)}',
+        );
+      }).toList();
+
+      final borRows = await client
+          .from('borrowings')
+          .select('id, transaction_code, status, borrowed_at, due_at, returned_at, resources(title, edition_year, campus, cover_color)')
+          .eq('student_id', uid)
+          .order('borrowed_at', ascending: false);
+
+      borrowings = (borRows as List).map((b) {
+        final resObj = b['resources'] as Map<String, dynamic>?;
+        final status = b['status'] as String;
+        final pill = status == 'overdue'
+            ? 'Overdue'
+            : status == 'returned'
+                ? 'Returned'
+                : 'Borrowed';
+        return BorrowingRecord(
+          id: b['id'],
+          transactionCode: b['transaction_code'],
+          resourceTitle: resObj?['title'] ?? 'Resource',
+          resourceEditionFormat: '${resObj?['edition_year'] ?? ''} · Print book',
+          campus: resObj?['campus'] ?? 'Talisay campus',
+          coverColor: Color(int.parse(((resObj?['cover_color'] as String?) ?? '#1B4332').replaceFirst('#', '0xFF'))),
+          status: status,
+          borrowedAtLabel: (b['borrowed_at'] as String).substring(0, 10),
+          dueAtLabel: (b['due_at'] as String).substring(0, 10),
+          returnedAtLabel: b['returned_at'] != null ? (b['returned_at'] as String).substring(0, 10) : null,
+          statusPillLabel: pill,
+        );
+      }).toList();
+
+      final notRows = await client
+          .from('notifications')
+          .select()
+          .eq('user_id', uid)
+          .order('created_at', ascending: false);
+
+      notifications = (notRows as List).map((n) => AppNotificationItem(
+        id: n['id'],
+        category: n['category'] ?? 'borrowing',
+        type: n['type'] ?? 'reservation_update',
+        title: n['title'] ?? '',
+        body: n['body'] ?? '',
+        statusLabel: n['status_label'] ?? '',
+        timestampLabel: (n['created_at'] as String).substring(0, 10),
+        actionLabel: 'View details →',
+        isRead: n['is_read'] ?? false,
+      )).toList();
+    }
     notifyListeners();
   }
 
@@ -204,14 +285,20 @@ class LibraryService extends ChangeNotifier {
     }
   }
 
-  void markNotificationRead(String id) {
+  Future<void> markNotificationRead(String id) async {
     notifications = notifications.map((n) => n.id == id ? n.copyWith(isRead: true) : n).toList();
     notifyListeners();
+    if (SupabaseConfig.isConfigured) {
+      await Supabase.instance.client.from('notifications').update({'is_read': true}).eq('id', id);
+    }
   }
 
-  void markAllNotificationsRead() {
+  Future<void> markAllNotificationsRead() async {
     notifications = notifications.map((n) => n.copyWith(isRead: true)).toList();
     notifyListeners();
+    if (SupabaseConfig.isConfigured && currentUser != null) {
+      await Supabase.instance.client.from('notifications').update({'is_read': true}).eq('user_id', currentUser!.id);
+    }
   }
 
   static List<LibraryResource> _seedResources() => [

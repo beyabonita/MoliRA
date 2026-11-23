@@ -20,10 +20,66 @@
     returned: '<span class="pill pill-green">Returned</span>',
   };
 
-  function render() {
-    const state = window.ChmsuApi.getDemoState();
-    const q = searchEl.value.trim().toLowerCase();
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
 
+  async function fetchLiveState() {
+    const client = window.ChmsuApi.getSupabaseClient();
+    const [rsvQ, borQ] = await Promise.all([
+      client
+        .from('reservations')
+        .select('id, reference_code, status, pickup_deadline, created_at, updated_at, profiles(full_name, student_id), resources(title, edition_year, format)')
+        .order('created_at', { ascending: false }),
+      client
+        .from('borrowings')
+        .select('id, transaction_code, status, borrowed_at, due_at, returned_at, profiles(full_name, student_id), resources(title)')
+        .order('borrowed_at', { ascending: false }),
+    ]);
+    if (rsvQ.error) throw rsvQ.error;
+    if (borQ.error) throw borQ.error;
+
+    return {
+      reservations: (rsvQ.data || []).map(r => ({
+        id: r.id,
+        reference_code: r.reference_code,
+        student_name: r.profiles?.full_name || 'Student',
+        student_id_num: r.profiles?.student_id || '—',
+        resource_title: r.resources?.title || 'Resource',
+        resource_meta: `${r.resources?.edition_year || ''} · ${r.resources?.format === 'ebook' ? 'E-book' : 'Print book'}`,
+        status: r.status,
+        pickup_label: r.pickup_deadline ? fmtDate(r.pickup_deadline) : (r.status === 'pending' ? 'Not assigned' : '—'),
+        updated_label: `Updated ${fmtDate(r.updated_at)}`,
+      })),
+      borrowings: (borQ.data || []).map(b => ({
+        id: b.id,
+        transaction_code: b.transaction_code,
+        student_name: b.profiles?.full_name || 'Student',
+        student_id_num: b.profiles?.student_id || '—',
+        resource_title: b.resources?.title || 'Resource',
+        status: b.status,
+        borrowed_at: fmtDate(b.borrowed_at),
+        due_at: fmtDate(b.due_at),
+        returned_at: b.returned_at ? fmtDate(b.returned_at) : '',
+      })),
+    };
+  }
+
+  async function render() {
+    let state;
+    if (window.ChmsuApi.isLiveSession()) {
+      try {
+        state = await fetchLiveState();
+      } catch (err) {
+        window.ChmsuApi.showToast('Supabase error: ' + err.message);
+        state = window.ChmsuApi.getDemoState();
+      }
+    } else {
+      state = window.ChmsuApi.getDemoState();
+    }
+
+    const q = searchEl.value.trim().toLowerCase();
     const activeCount = state.reservations.filter(r => ['pending', 'approved', 'ready'].includes(r.status)).length;
     document.getElementById('active-requests-pill').textContent = `${activeCount} active requests`;
 
@@ -151,6 +207,11 @@
     );
 
     const tbody = document.getElementById('table-body');
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:28px;">No borrowing records found.</td></tr>`;
+      return;
+    }
+
     tbody.innerHTML = filtered.map(b => `
       <tr>
         <td>
@@ -177,7 +238,35 @@
     });
   }
 
-  function handleAction(action, id) {
+  async function handleAction(action, id) {
+    if (window.ChmsuApi.isLiveSession()) {
+      const client = window.ChmsuApi.getSupabaseClient();
+      try {
+        if (action === 'approve') {
+          const { error } = await client.rpc('update_reservation_status', { p_reservation_id: id, p_new_status: 'approved' });
+          if (error) throw error;
+          window.ChmsuApi.showToast('Reservation approved & student notified.');
+        } else if (action === 'ready') {
+          const { error } = await client.rpc('update_reservation_status', { p_reservation_id: id, p_new_status: 'ready' });
+          if (error) throw error;
+          window.ChmsuApi.showToast('Marked ready for pickup & student notified.');
+        } else if (action === 'checkout') {
+          const { error } = await client.rpc('complete_reservation_checkout', { p_reservation_id: id });
+          if (error) throw error;
+          window.ChmsuApi.showToast('Checkout recorded & 7-day loan created.');
+        } else if (action === 'cancel') {
+          const { error } = await client.rpc('update_reservation_status', { p_reservation_id: id, p_new_status: 'cancelled' });
+          if (error) throw error;
+          window.ChmsuApi.showToast('Reservation cancelled.');
+        }
+        render();
+        return;
+      } catch (err) {
+        window.ChmsuApi.showToast(err.message);
+        return;
+      }
+    }
+
     const state = window.ChmsuApi.getDemoState();
     const rsv = state.reservations.find(r => r.id === id);
     if (!rsv) return;
@@ -186,7 +275,7 @@
       rsv.status = 'approved';
       rsv.pickup_label = 'Awaiting preparation';
       rsv.updated_label = 'Approved · Just now';
-      window.ChmsuApi.showToast(`Approved ${rsv.reference_code}. Automated notification queued.`);
+      window.ChmsuApi.showToast(`Approved ${rsv.reference_code}.`);
     } else if (action === 'ready') {
       rsv.status = 'ready';
       rsv.pickup_label = 'Next library day · 4:00 PM';
@@ -194,7 +283,7 @@
       document.getElementById('ready-preview-text').textContent =
         `${rsv.student_name.split(' ')[0]}, ${rsv.resource_title} is ready at the Talisay circulation desk. Collect by ${rsv.pickup_label}. Reference: ${rsv.reference_code}.`;
       document.getElementById('preview-badge').textContent = 'Sent to student';
-      window.ChmsuApi.showToast(`Marked ${rsv.reference_code} ready. Student notified!`);
+      window.ChmsuApi.showToast(`Marked ${rsv.reference_code} ready.`);
     } else if (action === 'checkout') {
       rsv.status = 'completed';
       rsv.pickup_label = 'Collected today';
@@ -210,7 +299,7 @@
         borrowed_at: '19 Oct 2026',
         due_at: '26 Oct 2026',
       });
-      window.ChmsuApi.showToast(`Checkout completed (${txnCode}). Added to student borrowing activity.`);
+      window.ChmsuApi.showToast(`Checkout completed (${txnCode}).`);
     } else if (action === 'cancel') {
       rsv.status = 'cancelled';
       rsv.pickup_label = '—';
@@ -222,7 +311,19 @@
     render();
   }
 
-  function handleReturn(borrowingId) {
+  async function handleReturn(borrowingId) {
+    if (window.ChmsuApi.isLiveSession()) {
+      const client = window.ChmsuApi.getSupabaseClient();
+      const { error } = await client.rpc('return_borrowed_book', { p_borrowing_id: borrowingId });
+      if (error) {
+        window.ChmsuApi.showToast(error.message);
+        return;
+      }
+      window.ChmsuApi.showToast('Book marked as returned.');
+      render();
+      return;
+    }
+
     const state = window.ChmsuApi.getDemoState();
     const bor = state.borrowings.find(b => b.id === borrowingId);
     if (!bor) return;
@@ -233,7 +334,18 @@
     render();
   }
 
-  document.getElementById('send-due-alerts-btn').addEventListener('click', () => {
+  document.getElementById('send-due-alerts-btn').addEventListener('click', async () => {
+    if (window.ChmsuApi.isLiveSession()) {
+      const client = window.ChmsuApi.getSupabaseClient();
+      const { data, error } = await client.rpc('generate_due_and_overdue_notifications');
+      if (error) {
+        window.ChmsuApi.showToast(error.message);
+        return;
+      }
+      window.ChmsuApi.showToast(`Dispatched ${data || 0} due-soon/overdue notification(s).`);
+      render();
+      return;
+    }
     const state = window.ChmsuApi.getDemoState();
     const overdueCount = state.borrowings.filter(b => b.status === 'overdue').length;
     window.ChmsuApi.showToast(`Due-date & overdue check complete: ${overdueCount} overdue alert(s) dispatched.`);
