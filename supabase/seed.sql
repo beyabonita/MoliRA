@@ -1,4 +1,4 @@
--- Seed sample CHMSU Talisay Library resources
+-- Seed sample CHMSU Talisay Library resources (print books & e-resources)
 insert into public.resources (title, authors, edition_year, format, subject, campus, shelf_location, call_number, description, total_copies, available_copies, cover_color, cover_tag)
 values
   (
@@ -12,7 +12,7 @@ values
     'LB1028 C64 2018',
     'A practical guide to planning educational research, selecting methods, and interpreting findings. Useful for research proposals and thesis preparation.',
     5,
-    2,
+    3,
     '#1B4332',
     'EIGHTH EDITION'
   ),
@@ -27,7 +27,7 @@ values
     'RT41 K69 2020',
     'Comprehensive foundational text covering clinical nursing concepts, patient care procedures, and evidence-based practice.',
     3,
-    0,
+    2,
     '#9A5B3C',
     'TENTH EDITION'
   ),
@@ -57,8 +57,98 @@ values
     'BJ1012 E84 2021',
     'Introductory reader on moral philosophy, civic responsibility, and ethical reasoning in contemporary society.',
     2,
-    1,
+    2,
     '#7D6B44',
     'SECOND EDITION'
+  ),
+  (
+    'Database System Concepts',
+    'Abraham Silberschatz, Henry F. Korth & S. Sudarshan',
+    '7th edition · 2019',
+    'print',
+    'Information Technology',
+    'Talisay',
+    'Talisay · Computing section',
+    'QA76.9 D3 S56 2019',
+    'Core concepts of relational databases, SQL, normalization, transaction management, and distributed database architectures.',
+    4,
+    4,
+    '#1B4332',
+    'SEVENTH EDITION'
+  ),
+  (
+    'Software Engineering: A Practitioner''s Approach',
+    'Roger S. Pressman & Bruce R. Maxim',
+    '9th edition · 2020',
+    'print',
+    'Information Technology',
+    'Talisay',
+    'Talisay · Computing section',
+    'QA76.758 P75 2020',
+    'Covers agile software development, requirements engineering, system architecture, testing, and quality assurance.',
+    4,
+    3,
+    '#345063',
+    'NINTH EDITION'
+  ),
+  (
+    'Principles of Teaching and Learning',
+    'Brenda B. Corpuz & Gloria G. Salandanan',
+    '4th edition · 2021',
+    'print',
+    'Education',
+    'Talisay',
+    'Talisay · Education section',
+    'LB1025.3 C67 2021',
+    'Classroom instruction strategies, outcomes-based education, and learner-centered assessment frameworks.',
+    5,
+    5,
+    '#7D6B44',
+    'FOURTH EDITION'
+  ),
+  (
+    'Philippine History and Governance',
+    'Teodoro A. Agoncillo',
+    'Revised edition · 2020',
+    'ebook',
+    'General education',
+    'Talisay',
+    'Digital Repository',
+    'DS668 A36 2020',
+    'Digital reference covering Philippine historical development, constitutional governance, and civic institutions.',
+    15,
+    15,
+    '#9A5B3C',
+    'E-BOOK'
+  ),
+  (
+    'Engineering Mechanics: Statics and Dynamics',
+    'R. C. Hibbeler',
+    '14th edition · 2019',
+    'print',
+    'Engineering',
+    'Talisay',
+    'Talisay · Engineering section',
+    'TA350 H53 2019',
+    'Foundational principles of force systems, equilibrium, kinematics, and kinetics for engineering students.',
+    3,
+    2,
+    '#1B4332',
+    '14TH EDITION'
+  ),
+  (
+    'Academic Writing and Thesis Guide',
+    'CHMSU Graduate School Press',
+    '2024 edition',
+    'ebook',
+    'Research',
+    'Talisay',
+    'Digital Repository',
+    'LB2369 C45 2024',
+    'Institutional style manual for capstone projects, undergraduate theses, APA citations, and research formatting.',
+    20,
+    20,
+    '#345063',
+    'DIGITAL GUIDE'
   )
 on conflict do nothing;
