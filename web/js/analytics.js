@@ -93,32 +93,80 @@
 
   function renderChart(series, scale, formatFilter) {
     const container = document.getElementById('usage-chart');
-    const maxRaw = Math.max(10, ...series.map(pt => Math.max(pt.print * scale, pt.digital * scale)));
+    const points = series.map(pt => ({
+      label: pt.label,
+      print: formatFilter === 'ebook' ? 0 : Math.round(pt.print * scale),
+      digital: formatFilter === 'print' ? 0 : Math.round(pt.digital * scale),
+    }));
+
+    const maxRaw = Math.max(10, ...points.map(pt => Math.max(pt.print, pt.digital)));
     const maxVal = Math.ceil(maxRaw / 10) * 10;
     const width = 620;
-    const height = 220;
+    const height = 225;
+    const chartLeft = 46;
+    const chartRight = width - 26;
+    const chartTop = 24;
     const chartBottom = 175;
-    const groupWidth = width / Math.max(1, series.length);
+    const chartH = chartBottom - chartTop;
+    const chartW = chartRight - chartLeft;
+
+    const getX = (idx) => {
+      if (points.length === 1) return chartLeft + chartW / 2;
+      return chartLeft + (idx / (points.length - 1)) * chartW;
+    };
+    const getY = (val) => chartBottom - Math.min(chartH, (val / maxVal) * chartH);
 
     let svg = `<svg viewBox="0 0 ${width} ${height}" style="width:100%;height:100%;overflow:visible;">`;
+    svg += `
+      <defs>
+        <linearGradient id="gradPrint" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#1B4332" stop-opacity="0.22"/>
+          <stop offset="100%" stop-color="#1B4332" stop-opacity="0.01"/>
+        </linearGradient>
+        <linearGradient id="gradDigital" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#B08434" stop-opacity="0.24"/>
+          <stop offset="100%" stop-color="#B08434" stop-opacity="0.01"/>
+        </linearGradient>
+      </defs>
+    `;
+
     [0, 0.25, 0.5, 0.75, 1].forEach(ratio => {
       const tick = Math.round(maxVal * ratio);
-      const y = chartBottom - ratio * 145;
-      svg += `<line x1="36" y1="${y}" x2="${width - 10}" y2="${y}" stroke="#ECE9DF" stroke-dasharray="3,3" />`;
-      svg += `<text x="26" y="${y + 4}" text-anchor="end" font-size="11" fill="#7C847E">${tick}</text>`;
+      const y = chartBottom - ratio * chartH;
+      svg += `<line x1="${chartLeft}" y1="${y}" x2="${chartRight}" y2="${y}" stroke="#ECE9DF" stroke-dasharray="3,3" />`;
+      svg += `<text x="${chartLeft - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="#7C847E">${tick}</text>`;
     });
 
-    series.forEach((pt, idx) => {
-      const pVal = formatFilter === 'ebook' ? 0 : Math.round(pt.print * scale);
-      const dVal = formatFilter === 'print' ? 0 : Math.round(pt.digital * scale);
-      const cx = 56 + idx * groupWidth + groupWidth * 0.2;
-      const pH = Math.min(145, (pVal / maxVal) * 145);
-      const dH = Math.min(145, (dVal / maxVal) * 145);
+    const drawSeries = (key, color, gradId, labelOffset) => {
+      const coords = points.map((pt, idx) => ({
+        x: getX(idx),
+        y: getY(pt[key]),
+        val: pt[key],
+      }));
 
-      svg += `<rect x="${cx}" y="${chartBottom - pH}" width="22" height="${pH}" rx="4" fill="#1B4332"><title>Print: ${pVal}</title></rect>`;
-      svg += `<rect x="${cx + 28}" y="${chartBottom - dH}" width="22" height="${dH}" rx="4" fill="#B08434"><title>Digital: ${dVal}</title></rect>`;
-      svg += `<text x="${cx + 25}" y="${chartBottom + 18}" text-anchor="middle" font-size="11" fill="#5D6660">${pt.label}</text>`;
-      svg += `<text x="${cx + 25}" y="${chartBottom + 33}" text-anchor="middle" font-size="11" font-weight="600" fill="#1D2420">${pVal + dVal} uses</text>`;
+      if (coords.length > 1) {
+        const linePath = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x} ${c.y}`).join(' ');
+        const areaPath = `${linePath} L ${coords[coords.length - 1].x} ${chartBottom} L ${coords[0].x} ${chartBottom} Z`;
+        svg += `<path d="${areaPath}" fill="url(#${gradId})" />`;
+        svg += `<path d="${linePath}" fill="none" stroke="${color}" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" />`;
+      } else if (coords.length === 1) {
+        const c = coords[0];
+        svg += `<line x1="${chartLeft}" y1="${c.y}" x2="${chartRight}" y2="${c.y}" stroke="${color}" stroke-width="2" stroke-dasharray="5,4" stroke-opacity="0.45" />`;
+      }
+
+      coords.forEach(c => {
+        svg += `<circle cx="${c.x}" cy="${c.y}" r="5.5" fill="#FFFFFF" stroke="${color}" stroke-width="2.75"><title>${key === 'print' ? 'Print' : 'Digital'}: ${c.val}</title></circle>`;
+        svg += `<text x="${c.x}" y="${c.y + labelOffset}" text-anchor="middle" font-size="11" font-weight="700" fill="${color}">${c.val}</text>`;
+      });
+    };
+
+    if (formatFilter !== 'ebook') drawSeries('print', '#1B4332', 'gradPrint', -10);
+    if (formatFilter !== 'print') drawSeries('digital', '#B08434', 'gradDigital', -10);
+
+    points.forEach((pt, idx) => {
+      const x = getX(idx);
+      svg += `<text x="${x}" y="${chartBottom + 18}" text-anchor="middle" font-size="11" fill="#5D6660">${pt.label}</text>`;
+      svg += `<text x="${x}" y="${chartBottom + 34}" text-anchor="middle" font-size="11" font-weight="600" fill="#1D2420">${pt.print + pt.digital} uses</text>`;
     });
 
     svg += `</svg>`;
